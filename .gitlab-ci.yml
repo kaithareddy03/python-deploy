@@ -1,9 +1,10 @@
 deploy_job:
   stage: deploy
   tags:
-    - windows   # 👈 VERY IMPORTANT
+    - windows   # 👈 MUST MATCH
+
   script:
-    - echo "Running on Windows runner..."
+    - echo "Deploying on Windows runner..."
 
     - powershell -Command "
         if (Test-Path 'D:\test') {
@@ -13,4 +14,6 @@ deploy_job:
         }
 
         Copy-Item -Path * -Destination 'D:\test\' -Recurse
+
+        Write-Host 'Deployment completed!'
       "
