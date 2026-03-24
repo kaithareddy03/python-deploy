@@ -1,16 +1,31 @@
 stages:
+  - build
   - deploy
 
-variables:
-  GIT_STRATEGY: none   # 👈 disables git completely
+# 🐧 BUILD ON LINUX
+build_job:
+  stage: build
+  tags:
+    - linux
+  script:
+    - echo "Building Python project on Linux..."
+    - mkdir output
+    - cp -r *.py output/ 2>/dev/null || echo "No python files"
+    - cp -r requirements.txt output/ 2>/dev/null || echo "No requirements"
+  artifacts:
+    paths:
+      - output/
 
+# 🪟 DEPLOY ON WINDOWS
 deploy_job:
   stage: deploy
   tags:
     - windows
+  dependencies:
+    - build_job
 
   script:
-    - echo "Deploying without Git..."
+    - echo "Deploying to Windows API35..."
 
     - powershell -Command "
         if (Test-Path 'D:\test') {
@@ -18,6 +33,8 @@ deploy_job:
         } else {
           New-Item -ItemType Directory -Path 'D:\test'
         }
+
+        Copy-Item -Path output\* -Destination 'D:\test\' -Recurse
 
         Write-Host 'Deployment completed!'
       "
