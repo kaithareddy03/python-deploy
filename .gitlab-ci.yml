@@ -7,7 +7,7 @@ build_job:
   image: python:3.10
   script:
     - echo "Building Python project..."
-    - python --version
+    - python3 --version
     - pip install -r requirements.txt || echo "No requirements file"
 
 deploy_job:
@@ -17,24 +17,24 @@ deploy_job:
     - echo "Deploying to Windows server..."
 
     - pwsh -Command "
-        $secpasswd = ConvertTo-SecureString $env:WIN_PASS -AsPlainText -Force;
-        $cred = New-Object System.Management.Automation.PSCredential($env:WIN_USER, $secpasswd);
+        \$secpasswd = ConvertTo-SecureString \$env:WIN_PASS -AsPlainText -Force;
+        \$cred = New-Object System.Management.Automation.PSCredential(\$env:WIN_USER, \$secpasswd);
 
         Write-Host 'Connecting to Windows (API35)...';
-        $session = New-PSSession -ComputerName $env:WIN_HOST -Credential $cred -Authentication Basic;
+        \$session = New-PSSession -ComputerName \$env:WIN_HOST -Credential \$cred -Authentication Basic;
 
-        Write-Host 'Cleaning D:\test folder...';
-        Invoke-Command -Session $session -ScriptBlock {
-          if (Test-Path 'D:\test') {
-            Remove-Item -Recurse -Force 'D:\test\*'
+        Write-Host 'Cleaning D:\\test folder...';
+        Invoke-Command -Session \$session -ScriptBlock {
+          if (Test-Path 'D:\\test') {
+            Remove-Item -Recurse -Force 'D:\\test\\*'
           } else {
-            New-Item -ItemType Directory -Path 'D:\test'
+            New-Item -ItemType Directory -Path 'D:\\test'
           }
         };
 
         Write-Host 'Copying Python files...';
-        Copy-Item -Path * -Destination 'D:\test\' -Recurse -ToSession $session;
+        Copy-Item -Path * -Destination 'D:\\test\\' -Recurse -ToSession \$session;
 
         Write-Host 'Deployment completed!';
-        Remove-PSSession $session;
+        Remove-PSSession \$session;
       "
