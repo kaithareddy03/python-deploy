@@ -1,40 +1,16 @@
-stages:
-  - build
-  - deploy
-
-build_job:
-  stage: build
-  image: python:3.10
-  script:
-    - echo "Building Python project..."
-    - python3 --version
-    - pip install -r requirements.txt || echo "No requirements file"
-
 deploy_job:
   stage: deploy
-  image: mcr.microsoft.com/powershell:latest
+  tags:
+    - windows   # 👈 VERY IMPORTANT
   script:
-    - echo "Deploying to Windows server..."
+    - echo "Running on Windows runner..."
 
-    - pwsh -Command "
-        \$secpasswd = ConvertTo-SecureString \$env:WIN_PASS -AsPlainText -Force;
-        \$cred = New-Object System.Management.Automation.PSCredential(\$env:WIN_USER, \$secpasswd);
+    - powershell -Command "
+        if (Test-Path 'D:\test') {
+          Remove-Item -Recurse -Force 'D:\test\*'
+        } else {
+          New-Item -ItemType Directory -Path 'D:\test'
+        }
 
-        Write-Host 'Connecting to Windows (API35)...';
-        \$session = New-PSSession -ComputerName \$env:WIN_HOST -Credential \$cred -Authentication Basic;
-
-        Write-Host 'Cleaning D:\\test folder...';
-        Invoke-Command -Session \$session -ScriptBlock {
-          if (Test-Path 'D:\\test') {
-            Remove-Item -Recurse -Force 'D:\\test\\*'
-          } else {
-            New-Item -ItemType Directory -Path 'D:\\test'
-          }
-        };
-
-        Write-Host 'Copying Python files...';
-        Copy-Item -Path * -Destination 'D:\\test\\' -Recurse -ToSession \$session;
-
-        Write-Host 'Deployment completed!';
-        Remove-PSSession \$session;
+        Copy-Item -Path * -Destination 'D:\test\' -Recurse
       "
