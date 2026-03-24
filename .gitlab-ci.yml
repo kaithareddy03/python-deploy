@@ -2,13 +2,13 @@ stages:
   - build
   - deploy
 
-# 🐧 BUILD ON LINUX
+# 🐧 BUILD ON LINUX (Git happens here only)
 build_job:
   stage: build
   tags:
     - linux
   script:
-    - echo "Building Python project on Linux..."
+    - echo "Building Python project..."
     - mkdir output
     - cp -r *.py output/ 2>/dev/null || echo "No python files"
     - cp -r requirements.txt output/ 2>/dev/null || echo "No requirements"
@@ -16,7 +16,7 @@ build_job:
     paths:
       - output/
 
-# 🪟 DEPLOY ON WINDOWS
+# 🪟 DEPLOY ON WINDOWS (NO GIT USED HERE)
 deploy_job:
   stage: deploy
   tags:
@@ -24,8 +24,12 @@ deploy_job:
   dependencies:
     - build_job
 
+  # 👇 DISABLE GIT ON WINDOWS
+  variables:
+    GIT_STRATEGY: none
+
   script:
-    - echo "Deploying to Windows API35..."
+    - echo "Deploying to Windows without Git..."
 
     - powershell -Command "
         if (Test-Path 'D:\test') {
