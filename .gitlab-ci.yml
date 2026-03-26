@@ -3,43 +3,31 @@ stages:
   - deploy
 
 variables:
-  APP_PATH: "D:\\test"
-
-build_job:
-  stage: build
-  tags:
-    - linux
-  script:
-    - echo "Preparing files..."
-  artifacts:
-    paths:
-      - .
+  GIT_STRATEGY: clone
 
 deploy_job:
   stage: deploy
-  tags:
-    - windows
-
-  variables:
-    GIT_STRATEGY: none
-
-  dependencies:
-    - build_job
-
   script:
-    - echo "Copying files to Windows..."
+    - echo "🚀 Starting deployment"
 
+    # Backup
     - powershell -Command "
-        Write-Host 'Preparing folder...';
-
-        if (Test-Path '$env:APP_PATH') {
-          Remove-Item -Recurse -Force '$env:APP_PATH\*'
-        } else {
-          New-Item -ItemType Directory -Path '$env:APP_PATH'
-        }
-
-        Write-Host 'Copying files...';
-        Copy-Item -Path * -Destination '$env:APP_PATH' -Recurse -Force;
-
-        Write-Host 'Files copied successfully!';
+        $backupPath = 'D:\test\backup_' + (Get-Date -Format 'yyyyMMdd_HHmmss');
+        Copy-Item D:\test\output $backupPath -Recurse;
       "
+
+    # Get changed files
+    - git diff --name-only HEAD~1 HEAD > changed_files.txt
+
+    # Deploy changed files
+    - powershell -Command "
+        $files = Get-Content changed_files.txt;
+        foreach ($file in $files) {
+            if (Test-Path $file) {
+                Copy-Item $file -Destination D:\test\output\$file -Force
+            }
+        }
+      "
+
+    # Verify
+    - powershell -Command "Get-Content D:\test\output\app.py"
