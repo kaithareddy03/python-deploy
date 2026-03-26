@@ -10,9 +10,10 @@ build_job:
   tags:
     - linux
   script:
-    - echo "Installing dependencies..."
-    - pip3 install -r requirements.txt || true
-    - echo "Build completed"
+    - echo "Preparing files..."
+  artifacts:
+    paths:
+      - .
 
 deploy_job:
   stage: deploy
@@ -22,12 +23,14 @@ deploy_job:
   variables:
     GIT_STRATEGY: none
 
+  dependencies:
+    - build_job
+
   script:
-    - echo "Deploying on Windows..."
+    - echo "Copying files to Windows..."
 
     - powershell -Command "
-        Write-Host 'Stopping old app...';
-        Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force;
+        Write-Host 'Preparing folder...';
 
         if (Test-Path '$env:APP_PATH') {
           Remove-Item -Recurse -Force '$env:APP_PATH\*'
@@ -35,10 +38,8 @@ deploy_job:
           New-Item -ItemType Directory -Path '$env:APP_PATH'
         }
 
-        Copy-Item -Path * -Destination '$env:APP_PATH' -Recurse;
+        Write-Host 'Copying files...';
+        Copy-Item -Path * -Destination '$env:APP_PATH' -Recurse -Force;
 
-        Write-Host 'Starting app...';
-        Start-Process python '$env:APP_PATH\app.py';
-
-        Write-Host 'Deployment completed!'
+        Write-Host 'Files copied successfully!';
       "
