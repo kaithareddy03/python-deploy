@@ -1,22 +1,26 @@
 stages:
   - deploy
 
-variables:
-  GIT_STRATEGY: clone
-
 deploy_job:
   stage: deploy
   tags:
-    - windows   # ✅ force Windows runner
+    - windows   # VERY IMPORTANT
+
+  variables:
+    GIT_STRATEGY: none   # ❌ disables git clone
 
   script:
-    - echo "🚀 Starting deployment"
+    - echo "🚀 Starting deployment (No Git)"
 
+    # Check runner
     - powershell -Command "hostname"
     - powershell -Command "Get-PSDrive"
 
+    # Clean folder
     - powershell -Command "Remove-Item 'D:\test\output\*' -Recurse -Force -ErrorAction SilentlyContinue"
 
-    - powershell -Command "Copy-Item * -Destination 'D:\test\output' -Recurse -Force"
+    # Copy from fixed source path
+    - powershell -Command "Copy-Item 'D:\source\*' -Destination 'D:\test\output' -Recurse -Force"
 
-    - powershell -Command "Get-Content 'D:\test\output\app.py'""
+    # Verify
+    - powershell -Command "Get-ChildItem 'D:\test\output'"
