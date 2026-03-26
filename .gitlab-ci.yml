@@ -1,23 +1,23 @@
+stages:
+  - deploy
+
+variables:
+  GIT_STRATEGY: clone
+
 deploy_job:
   stage: deploy
   script:
     - echo "🚀 Starting deployment"
 
-    # Backup
-    - powershell -Command "
-        Write-Host 'Checking drives...';
-        Get-PSDrive;
+    # Show current runner info (debug)
+    - powershell -Command "hostname"
+    - powershell -Command "Get-PSDrive"
 
-        \$path = 'D:\test\output';
+    # Clean old files
+    - powershell -Command "Remove-Item 'D:\test\output\*' -Recurse -Force -ErrorAction SilentlyContinue"
 
-        if (!(Test-Path \$path)) {
-            Write-Host 'Path not found';
-            exit 1;
-        }
+    # Copy all latest files
+    - powershell -Command "Copy-Item * -Destination 'D:\test\output' -Recurse -Force"
 
-        \$backupPath = 'D:\test\backup_' + (Get-Date -Format 'yyyyMMdd_HHmmss');
-
-        Copy-Item \$path \$backupPath -Recurse;
-
-        Write-Host 'Backup created';
-      "
+    # Verify deployment
+    - powershell -Command "Get-Content 'D:\test\output\app.py'"
