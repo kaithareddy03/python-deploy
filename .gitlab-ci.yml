@@ -1,45 +1,23 @@
-stages:
-  - build
-  - deploy
-
-variables:
-  GIT_STRATEGY: clone
-
 deploy_job:
   stage: deploy
   script:
     - echo "🚀 Starting deployment"
 
     # Backup
-    - powershell -Command |
-        Write-Host "Checking drives..."
-        Get-PSDrive
+    - powershell -Command "
+        Write-Host 'Checking drives...';
+        Get-PSDrive;
 
-        $path = "D:\test\output"
+        \$path = 'D:\test\output';
 
-        if (!(Test-Path $path)) {
-            Write-Host "❌ Path not found"
-            exit 1
+        if (!(Test-Path \$path)) {
+            Write-Host 'Path not found';
+            exit 1;
         }
 
-        $backupPath = "D:\test\backup_" + (Get-Date -Format "yyyyMMdd_HHmmss")
+        \$backupPath = 'D:\test\backup_' + (Get-Date -Format 'yyyyMMdd_HHmmss');
 
-        Copy-Item $path $backupPath -Recurse
+        Copy-Item \$path \$backupPath -Recurse;
 
-        Write-Host "✅ Backup created"
-
-    # Get changed files
-    - git diff --name-only HEAD~1 HEAD > changed_files.txt
-
-    # Deploy changed files
-    - powershell -Command |
-        $files = Get-Content changed_files.txt
-
-        foreach ($file in $files) {
-            if (Test-Path $file) {
-                Copy-Item $file -Destination "D:\test\output\$file" -Force
-            }
-        }
-
-    # Verify
-    - powershell -Command "Get-Content D:\test\output\app.py"
+        Write-Host 'Backup created';
+      "
