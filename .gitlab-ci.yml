@@ -1,26 +1,49 @@
 stages:
+  - build
   - deploy
 
+# 🔹 BUILD STAGE (Linux)
+build_job:
+  stage: build
+  tags:
+    - linux
+
+  variables:
+    GIT_STRATEGY: clone   # ✅ get latest code from GitHub
+
+  script:
+    - echo "📥 Getting latest code from GitHub"
+    - git log -1
+
+    - echo "🔨 Building project"
+    - ls -l
+
+  artifacts:
+    paths:
+      - .   # send all files to deploy stage
+    expire_in: 1 hour
+
+
+# 🔹 DEPLOY STAGE (Windows)
 deploy_job:
   stage: deploy
   tags:
-    - windows   # VERY IMPORTANT
+    - windows
 
   variables:
-    GIT_STRATEGY: none   # ❌ disables git clone
+    GIT_STRATEGY: none   # ❌ no git here
 
   script:
-    - echo "🚀 Starting deployment (No Git)"
+    - echo "🚀 Deploying to Windows"
 
-    # Check runner
+    # Debug
     - powershell -Command "hostname"
-    - powershell -Command "Get-PSDrive"
 
-    # Clean folder
+    # Clean old files
     - powershell -Command "Remove-Item 'D:\test\output\*' -Recurse -Force -ErrorAction SilentlyContinue"
 
-    # Copy from fixed source path
-    - powershell -Command "Copy-Item 'D:\source\*' -Destination 'D:\test\output' -Recurse -Force"
+    # Copy new files (from artifacts)
+    - powershell -Command "Copy-Item * -Destination 'D:\test\output' -Recurse -Force"
 
     # Verify
-    - powershell -Command "Get-ChildItem 'D:\test\output'"
+    - powershell -Command "Get-Content 'D:\test\output\app.py'"
