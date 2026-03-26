@@ -11,7 +11,23 @@ deploy_job:
     - echo "🚀 Starting deployment"
 
     # Backup
-    - powershell -Command '$backupPath = "D:\test\backup_" + (Get-Date -Format "yyyyMMdd_HHmmss"); Copy-Item "D:\test\output" $backupPath -Recurse'
+    - powershell -Command '
+    Write-Host "Checking drives...";
+    Get-PSDrive;
+
+    $path = "D:\test\output";
+
+    if (!(Test-Path $path)) {
+        Write-Host "❌ Path not found";
+        exit 1;
+    }
+
+    $backupPath = "D:\test\backup_" + (Get-Date -Format "yyyyMMdd_HHmmss");
+
+    Copy-Item $path $backupPath -Recurse;
+
+    Write-Host "✅ Backup created"
+'
 
     # Get changed files
     - git diff --name-only HEAD~1 HEAD > changed_files.txt
