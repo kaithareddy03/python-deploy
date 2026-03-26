@@ -2,43 +2,43 @@ stages:
   - build
   - deploy
 
-# 🐧 BUILD ON LINUX (Git happens here only)
+variables:
+  APP_PATH: "D:\\test"
+
 build_job:
   stage: build
   tags:
     - linux
   script:
-    - echo "Building Python project..."
-    - mkdir output
-    - cp -r *.py output/ 2>/dev/null || echo "No python files"
-    - cp -r requirements.txt output/ 2>/dev/null || echo "No requirements"
-  artifacts:
-    paths:
-      - output/
+    - echo "Installing dependencies..."
+    - pip3 install -r requirements.txt || true
+    - echo "Build completed"
 
-# 🪟 DEPLOY ON WINDOWS (NO GIT USED HERE)
 deploy_job:
   stage: deploy
   tags:
     - windows
-  dependencies:
-    - build_job
 
-  # 👇 DISABLE GIT ON WINDOWS
   variables:
     GIT_STRATEGY: none
 
   script:
-    - echo "Deploying to Windows without Git..."
+    - echo "Deploying on Windows..."
 
     - powershell -Command "
-        if (Test-Path 'D:\test') {
-          Remove-Item -Recurse -Force 'D:\test\*'
+        Write-Host 'Stopping old app...';
+        Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force;
+
+        if (Test-Path '$env:APP_PATH') {
+          Remove-Item -Recurse -Force '$env:APP_PATH\*'
         } else {
-          New-Item -ItemType Directory -Path 'D:\test'
+          New-Item -ItemType Directory -Path '$env:APP_PATH'
         }
 
-        Copy-Item -Path output\* -Destination 'D:\test\' -Recurse
+        Copy-Item -Path * -Destination '$env:APP_PATH' -Recurse;
+
+        Write-Host 'Starting app...';
+        Start-Process python '$env:APP_PATH\app.py';
 
         Write-Host 'Deployment completed!'
       "
