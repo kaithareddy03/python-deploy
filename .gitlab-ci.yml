@@ -2,26 +2,35 @@ stages:
   - build
   - deploy
 
-# 🔹 BUILD STAGE (Pull latest GitHub code)
+# 🔹 BUILD STAGE (Use same folder + pull latest GitHub code)
 build_job:
   stage: build
   tags:
     - linux
 
   script:
-    - echo "📥 Cleaning old workspace"
-    - rm -rf *
+    - echo "📥 Using existing folder - updating from GitHub"
 
-    - echo "📥 Cloning latest code from GitHub"
-    - git clone https://github.com/kaithareddy03/python-deploy.git .
+    # Ensure correct remote (GitHub)
+    - git remote set-url origin https://github.com/kaithareddy03/python-deploy.git
 
-    - echo "🔍 Checking latest commit"
+    # Fetch latest changes
+    - git fetch origin
+
+    # Force sync with GitHub (no old code remains)
+    - git reset --hard origin/main
+
+    # Clean untracked files (optional but recommended)
+    - git clean -fd
+
+    # Debug
+    - echo "🔍 Latest commit:"
     - git log -1
 
-    - echo "🔍 Checking branch"
-    - git branch
+    - echo "🔍 Remote URL:"
+    - git remote -v
 
-    - echo "📂 Files in repo"
+    - echo "📂 Files:"
     - ls -l
 
   artifacts:
@@ -30,7 +39,7 @@ build_job:
     expire_in: 1 hour
 
 
-# 🔹 DEPLOY STAGE (Windows Server)
+# 🔹 DEPLOY STAGE (Windows)
 deploy_job:
   stage: deploy
   tags:
@@ -40,10 +49,10 @@ deploy_job:
     - build_job
 
   variables:
-    GIT_STRATEGY: none   # ❌ Don't use GitLab repo
+    GIT_STRATEGY: none   # 🚫 Don't use GitLab repo
 
   script:
-    - echo "🚀 Deploying latest GitHub code"
+    - echo "🚀 Deploying latest code to Windows"
 
     # Server check
     - powershell -Command "hostname"
@@ -51,9 +60,9 @@ deploy_job:
     # Clean old files
     - powershell -Command "Remove-Item 'D:\\test\\output\\*' -Recurse -Force -ErrorAction SilentlyContinue"
 
-    # Copy new files
+    # Copy updated files
     - powershell -Command "Copy-Item * -Destination 'D:\\test\\output' -Recurse -Force"
 
-    # Verify deployed file
+    # Verify deployment
     - powershell -Command "Write-Host '📄 Latest app.py:'"
     - powershell -Command "Get-Content 'D:\\test\\output\\app.py'"
