@@ -1,8 +1,9 @@
 stages:
   - build
+  - security
   - deploy
 
-# 🔹 BUILD STAGE (Use same folder + pull latest GitHub code)
+# 🔹 BUILD STAGE
 build_job:
   stage: build
   tags:
@@ -11,24 +12,13 @@ build_job:
   script:
     - echo "📥 Using existing folder - updating from GitHub"
 
-    # Ensure correct remote (GitHub)
     - git remote set-url origin https://github.com/kaithareddy03/python-deploy.git
-
-    # Fetch latest changes
     - git fetch origin
-
-    # Force sync with GitHub (no old code remains)
     - git reset --hard origin/main
-
-    # Clean untracked files (optional but recommended)
     - git clean -fd
 
-    # Debug
     - echo "🔍 Latest commit:"
     - git log -1
-
-    - echo "🔍 Remote URL:"
-    - git remote -v
 
     - echo "📂 Files:"
     - ls -l
@@ -36,6 +26,37 @@ build_job:
   artifacts:
     paths:
       - .
+    expire_in: 1 hour
+
+
+# 🔐 🔍 SECURITY STAGE (DevSecOps Added)
+security_scan:
+  stage: security
+  tags:
+    - linux
+
+  script:
+    - echo "🔐 Running DevSecOps Security Checks"
+
+    # 🔍 1. Dependency Vulnerability Scan
+    - pip install safety
+    - safety check || true
+
+    # 🔍 2. Static Code Analysis (SAST)
+    - pip install bandit
+    - bandit -r . || true
+
+    # 🔍 3. Secrets Detection
+    - pip install detect-secrets
+    - detect-secrets scan > secrets-report.json || true
+
+    # 🔍 4. Basic Python Lint (optional)
+    - pip install flake8
+    - flake8 . || true
+
+  artifacts:
+    paths:
+      - secrets-report.json
     expire_in: 1 hour
 
 
@@ -47,14 +68,14 @@ deploy_job:
 
   dependencies:
     - build_job
+    - security_scan
 
   variables:
-    GIT_STRATEGY: none   # 🚫 Don't use GitLab repo
+    GIT_STRATEGY: none
 
   script:
     - echo "🚀 Deploying latest code to Windows"
 
-    # Server check
     - powershell -Command "hostname"
 
     # Clean old files
